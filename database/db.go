@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"log"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,33 +15,31 @@ const (
 	UsersCollection = "users"
 )
 
-var client *mongo.Client
+func ConnectMongoDB() *mongo.Client {
+	cxt, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-func ConnectMongoDB() {
 	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
-	var err error
-	client, err = mongo.Connect(context.TODO(), clientOptions)
+	client, err := mongo.Connect(cxt, clientOptions)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = client.Ping(context.TODO(), nil)
+	err = client.Ping(cxt, nil)
 
 	if err != nil {
 		log.Fatal(err)
 	}
+	return client
 }
 
-func GetCollection(collectionName string) *mongo.Collection {
-	return client.Database("task_manager").Collection(collectionName)
-}
-func GetAuthCollection(collectionName string) *mongo.Collection {
+func GetCollection(client *mongo.Client, collectionName string) *mongo.Collection {
 	return client.Database("task_manager").Collection(collectionName)
 }
 
-func CreateEmailUniqueIndex() {
-	collection := GetCollection(UsersCollection)
+func CreateEmailUniqueIndex(client *mongo.Client) {
+	collection := GetCollection(client, UsersCollection)
 
 	indexModel := mongo.IndexModel{
 		Keys:    bson.M{"email": 1},
@@ -52,7 +51,7 @@ func CreateEmailUniqueIndex() {
 		log.Fatalf("Coudn't make email unique: %s", err.Error())
 	}
 }
-func DisconnectMongoDB() {
+func DisconnectMongoDB(client *mongo.Client) {
 	err := client.Disconnect(context.Background())
 
 	if err != nil {
