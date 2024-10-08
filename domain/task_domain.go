@@ -6,7 +6,7 @@ import (
 )
 
 type Task struct {
-	ID          string    `bson:"_id,omitempty" json:"-"`
+	ID          string    `bson:"_id" json:"_id"`
 	Title       string    `bson:"title" json:"title"`
 	Description string    `bson:"description" json:"description"`
 	DueDate     time.Time `bson:"due_date" json:"due_date"`

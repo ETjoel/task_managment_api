@@ -1,7 +1,8 @@
-package database
+package bootstrap
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -15,11 +16,18 @@ const (
 	UsersCollection = "users"
 )
 
-func ConnectMongoDB() *mongo.Client {
-	cxt, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func ConnectMongoDB(env Env) *mongo.Client {
+	cxt, cancel := context.WithTimeout(context.Background(), time.Duration(env.ContextTimeout)*time.Second)
 	defer cancel()
 
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+	mongoUri := fmt.Sprintf("mongodb://%s:%s@%s:%s", env.DBUser, env.DBPass, env.DBHost, env.DBPort)
+
+	if env.DBUser == "" || env.DBPass != "" {
+		mongoUri = fmt.Sprintf("mongodb://%s:%s", env.DBHost, env.DBPort)
+
+	}
+
+	clientOptions := options.Client().ApplyURI(mongoUri)
 	client, err := mongo.Connect(cxt, clientOptions)
 
 	if err != nil {
@@ -34,12 +42,8 @@ func ConnectMongoDB() *mongo.Client {
 	return client
 }
 
-func GetCollection(client *mongo.Client, collectionName string) *mongo.Collection {
-	return client.Database("task_manager").Collection(collectionName)
-}
-
-func CreateEmailUniqueIndex(client *mongo.Client) {
-	collection := GetCollection(client, UsersCollection)
+func CreateEmailUniqueIndex(env Env, client *mongo.Client) {
+	collection := client.Database(env.DBName).Collection(UsersCollection)
 
 	indexModel := mongo.IndexModel{
 		Keys:    bson.M{"email": 1},

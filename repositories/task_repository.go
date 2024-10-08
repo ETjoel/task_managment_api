@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"github.com/ETjoel/task_managment_api/domain"
 	"go.mongodb.org/mongo-driver/bson"
@@ -23,7 +24,7 @@ func (tr *taskRepositoryimpl) GetTasks(c context.Context) ([]domain.Task, error)
 	cur, err := collection.Find(c, bson.M{})
 
 	if err != nil {
-		return nil, err
+		return nil, errors.New("tasks not found!: " + err.Error())
 	}
 
 	var tasks []domain.Task
@@ -31,7 +32,7 @@ func (tr *taskRepositoryimpl) GetTasks(c context.Context) ([]domain.Task, error)
 		var task domain.Task
 		err := cur.Decode(&task)
 		if err != nil {
-			return nil, err
+			return nil, errors.New("internal server error: " + err.Error())
 		}
 		tasks = append(tasks, task)
 	}
@@ -41,18 +42,18 @@ func (tr *taskRepositoryimpl) GetTasks(c context.Context) ([]domain.Task, error)
 func (tr *taskRepositoryimpl) GetTaskById(c context.Context, id string) (domain.Task, error) {
 	collection := tr.db.Collection(tr.collection)
 
-	objectId, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return domain.Task{}, err
-	}
+	// objectId, err := primitive.ObjectIDFromHex(id)
+	// if err != nil {
+	// 	return domain.Task{}, errors.New("internal server error: " + err.Error())
+	// }
 
 	var task domain.Task
-	err = collection.FindOne(context.TODO(), bson.M{"_id": objectId}).Decode(&task)
+	err := collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&task)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return domain.Task{}, nil // No document found
+			return domain.Task{}, errors.New("Item not found: " + err.Error())
 		}
-		return domain.Task{}, err // Other errors
+		return domain.Task{}, err
 	}
 	return task, nil
 }
@@ -62,12 +63,12 @@ func (tr *taskRepositoryimpl) UpdateTask(c context.Context, id string, updatedTa
 
 	objectId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return err
+		return errors.New("internal server error: " + err.Error())
 	}
 
 	_, err = collection.UpdateByID(c, objectId, bson.M{"$set": updatedTask})
 	if err != nil {
-		return err
+		return errors.New("Item not found: " + err.Error())
 	}
 
 	return nil
@@ -80,12 +81,12 @@ func (tr *taskRepositoryimpl) DeleteTask(c context.Context, id string) error {
 
 	objectId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return err
+		return errors.New("internal server error: " + err.Error())
 	}
 
 	_, err = collection.DeleteOne(c, bson.M{"_id": objectId})
 	if err != nil {
-		return err
+		return errors.New("Item not found: " + err.Error())
 	}
 
 	return nil
@@ -93,9 +94,11 @@ func (tr *taskRepositoryimpl) DeleteTask(c context.Context, id string) error {
 
 func (tr *taskRepositoryimpl) AddTask(c context.Context, task *domain.Task) error {
 	collection := tr.db.Collection(tr.collection)
+	objectId := primitive.NewObjectID()
+	task.ID = objectId.Hex()
 	_, err := collection.InsertOne(c, task)
 	if err != nil {
-		return err
+		return errors.New("internal server error: " + err.Error())
 	}
 	return nil
 }
