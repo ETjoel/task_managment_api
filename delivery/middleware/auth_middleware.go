@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ETjoel/task_managment_api/data"
+	"github.com/ETjoel/task_managment_api/bootstrap"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
 
-func AuthMiddleWare() gin.HandlerFunc {
+func AuthMiddleWare(env bootstrap.Env) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 
@@ -31,7 +31,7 @@ func AuthMiddleWare() gin.HandlerFunc {
 				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 			}
 
-			return data.JwtSecret, nil
+			return env.AccessTokenSecret, nil
 		})
 
 		if err != nil || !token.Valid {

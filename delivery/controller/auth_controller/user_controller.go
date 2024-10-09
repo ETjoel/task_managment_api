@@ -2,23 +2,26 @@ package controller
 
 import (
 	"fmt"
-	"log"
 
-	"github.com/ETjoel/task_managment_api/data"
-	user_model "github.com/ETjoel/task_managment_api/models/user_model"
+	"github.com/ETjoel/task_managment_api/bootstrap"
+	"github.com/ETjoel/task_managment_api/domain"
 	"github.com/gin-gonic/gin"
 )
 
-func Register(c *gin.Context) {
-	var user user_model.User
+type UserController struct {
+	UserUsecases domain.UserUsercases
+	Env          bootstrap.Env
+}
+
+func (uc *UserController) Register(c *gin.Context) {
+	var user domain.User
 	if err := c.ShouldBindJSON(&user); err != nil {
 		c.IndentedJSON(400, gin.H{"error": err.Error()})
 		fmt.Print("bind: error % s", err.Error())
 		return
 	}
 
-	log.Printf("user passowrd: %s, user email: %s", user.Password, user.Email)
-	if err := data.RegisterUser(user); err != nil {
+	if err := uc.UserUsecases.Register(c, &user); err != nil {
 		c.IndentedJSON(500, gin.H{"error": err.Error()})
 		return
 	}
@@ -27,15 +30,18 @@ func Register(c *gin.Context) {
 
 }
 
-func Login(c *gin.Context) {
-	var user user_model.User
+func (uc *UserController) Login(c *gin.Context) {
+
+	jwtSecret := uc.Env.AccessTokenSecret
+	expireHour := uc.Env.AccessTokenExpiryHour
+	var user domain.User
 
 	if err := c.ShouldBindJSON(&user); err != nil {
 		c.IndentedJSON(400, gin.H{"error": err.Error()})
 		return
 	}
 
-	jwtToken, err := data.LoginUser(user)
+	jwtToken, err := uc.UserUsecases.Login(c, &user, jwtSecret, expireHour)
 
 	if err != nil {
 		c.IndentedJSON(500, gin.H{"error": err.Error()})

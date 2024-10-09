@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+const (
+	TaskCollection = "tasks"
+)
+
 type Task struct {
 	ID          string    `bson:"_id" json:"_id"`
 	Title       string    `bson:"title" json:"title"`

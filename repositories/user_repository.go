@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ETjoel/task_managment_api/domain"
+	"github.com/ETjoel/task_managment_api/internals/tokenutil"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"golang.org/x/crypto/bcrypt"
@@ -20,8 +21,8 @@ func NewUserRepository(db mongo.Database, collection string) domain.UserReposito
 	return &userRepositoryImpl{db: db, collection: collection}
 }
 
-func (ur *userRepositoryImpl) Register(c context.Context, user domain.User) error {
-	hashedPassword, err := bycrypt.GenerateFromPassword([]byte(user.Password))
+func (ur *userRepositoryImpl) Register(c context.Context, user *domain.User) error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 
 	if err != nil {
 		return errors.New("internal server error: " + err.Error())
@@ -40,7 +41,7 @@ func (ur *userRepositoryImpl) Register(c context.Context, user domain.User) erro
 	}
 }
 
-func (ur *userRepositoryImpl) Login(c context.Context, user domain.User) (string, error) {
+func (ur *userRepositoryImpl) Login(c context.Context, user *domain.User, jwtSecret string, expiryHour int) (string, error) {
 	var exitingUser domain.User
 	collection := ur.db.Collection(ur.collection)
 
@@ -53,5 +54,7 @@ func (ur *userRepositoryImpl) Login(c context.Context, user domain.User) (string
 	if err := bcrypt.CompareHashAndPassword([]byte(exitingUser.Password), []byte(user.Password)); err != nil {
 		return "", errors.New("invalid email or password")
 	}
+
+	return tokenutil.CreateAccessToken(jwtSecret, *user, expiryHour)
 
 }

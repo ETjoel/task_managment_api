@@ -6,14 +6,10 @@ import (
 	"log"
 	"time"
 
+	"github.com/ETjoel/task_managment_api/domain"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-)
-
-const (
-	TaskCollection  = "tasks"
-	UsersCollection = "users"
 )
 
 func ConnectMongoDB(env Env) *mongo.Client {
@@ -43,7 +39,7 @@ func ConnectMongoDB(env Env) *mongo.Client {
 }
 
 func CreateEmailUniqueIndex(env Env, client *mongo.Client) {
-	collection := client.Database(env.DBName).Collection(UsersCollection)
+	collection := client.Database(env.DBName).Collection(domain.UsersCollection)
 
 	indexModel := mongo.IndexModel{
 		Keys:    bson.M{"email": 1},
