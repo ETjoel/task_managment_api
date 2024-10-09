@@ -15,6 +15,7 @@ func (tc *TaskController) GetTasks(c *gin.Context) {
 	tasks, err := tc.TaskUsecase.GetTasks(c)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 	c.IndentedJSON(http.StatusOK, tasks)
 }
@@ -58,6 +59,7 @@ func (tc *TaskController) UpdateTask(c *gin.Context) {
 
 	if err := tc.TaskUsecase.UpdateTask(c, id, updatedTask); err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 	c.IndentedJSON(http.StatusOK, updatedTask)
 }
@@ -67,6 +69,7 @@ func (tc *TaskController) DeleteTask(c *gin.Context) {
 
 	if err := tc.TaskUsecase.DeleteTask(c, id); err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{"message": "Item Deleted"})
@@ -85,6 +88,7 @@ func (tc *TaskController) AddTask(c *gin.Context) {
 
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 	c.IndentedJSON(http.StatusCreated, newTask)
 }

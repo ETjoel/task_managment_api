@@ -42,11 +42,6 @@ func (tr *taskRepositoryimpl) GetTasks(c context.Context) ([]domain.Task, error)
 func (tr *taskRepositoryimpl) GetTaskById(c context.Context, id string) (domain.Task, error) {
 	collection := tr.db.Collection(tr.collection)
 
-	// objectId, err := primitive.ObjectIDFromHex(id)
-	// if err != nil {
-	// 	return domain.Task{}, errors.New("internal server error: " + err.Error())
-	// }
-
 	var task domain.Task
 	err := collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&task)
 	if err != nil {
@@ -60,15 +55,13 @@ func (tr *taskRepositoryimpl) GetTaskById(c context.Context, id string) (domain.
 
 func (tr *taskRepositoryimpl) UpdateTask(c context.Context, id string, updatedTask domain.Task) error {
 	collection := tr.db.Collection(tr.collection)
-
-	objectId, err := primitive.ObjectIDFromHex(id)
+	updatedResult, err := collection.UpdateByID(c, id, bson.M{"$set": updatedTask})
 	if err != nil {
 		return errors.New("internal server error: " + err.Error())
 	}
 
-	_, err = collection.UpdateByID(c, objectId, bson.M{"$set": updatedTask})
-	if err != nil {
-		return errors.New("Item not found: " + err.Error())
+	if updatedResult.MatchedCount == 0 {
+		return errors.New("item not found")
 	}
 
 	return nil
@@ -79,14 +72,12 @@ func (tr *taskRepositoryimpl) DeleteTask(c context.Context, id string) error {
 
 	collection := tr.db.Collection(tr.collection)
 
-	objectId, err := primitive.ObjectIDFromHex(id)
+	deletedResult, err := collection.DeleteOne(c, bson.M{"_id": id})
 	if err != nil {
 		return errors.New("internal server error: " + err.Error())
 	}
-
-	_, err = collection.DeleteOne(c, bson.M{"_id": objectId})
-	if err != nil {
-		return errors.New("Item not found: " + err.Error())
+	if deletedResult.DeletedCount == 0 {
+		return errors.New("item not found")
 	}
 
 	return nil
@@ -95,6 +86,7 @@ func (tr *taskRepositoryimpl) DeleteTask(c context.Context, id string) error {
 func (tr *taskRepositoryimpl) AddTask(c context.Context, task *domain.Task) error {
 	collection := tr.db.Collection(tr.collection)
 	objectId := primitive.NewObjectID()
+
 	task.ID = objectId.Hex()
 	_, err := collection.InsertOne(c, task)
 	if err != nil {

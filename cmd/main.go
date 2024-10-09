@@ -22,6 +22,6 @@ func main() {
 	router := gin.Default()
 	router.Use(cors.Default())
 
-	r.SetupRouter(db, timeout, router)
+	r.SetupRouter(db, timeout, router, &app.Env)
 	router.Run(app.Env.ServerAddress)
 }

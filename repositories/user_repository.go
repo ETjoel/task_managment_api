@@ -35,7 +35,7 @@ func (ur *userRepositoryImpl) Register(c context.Context, user *domain.User) err
 	if err != nil && mongo.IsDuplicateKeyError(err) {
 		return errors.New("email already in use")
 	} else if err != nil {
-		return errors.New("internal server error")
+		return errors.New("internal server error" + err.Error())
 	} else {
 		return nil
 	}

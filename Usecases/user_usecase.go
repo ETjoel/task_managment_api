@@ -20,14 +20,14 @@ func NewUserUsecases(userRepository domain.UserRepository, timeout time.Duration
 }
 
 func (uu *userUsercases) Register(c context.Context, user *domain.User) error {
-	ctx, cancel := context.WithTimeout(c, time.Duration(uu.contextTimeout)*time.Second)
+	ctx, cancel := context.WithTimeout(c, uu.contextTimeout)
 	defer cancel()
 
 	return uu.ur.Register(ctx, user)
 }
 
 func (uu *userUsercases) Login(c context.Context, user *domain.User, jwtSecret string, expiryHour int) (string, error) {
-	ctx, cancel := context.WithTimeout(c, time.Duration(uu.contextTimeout)*time.Second)
+	ctx, cancel := context.WithTimeout(c, uu.contextTimeout)
 	defer cancel()
 
 	return uu.ur.Login(ctx, user, jwtSecret, expiryHour)
